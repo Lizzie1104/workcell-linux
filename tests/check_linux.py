@@ -64,8 +64,13 @@ print('isolation-ready')
         assert b'?' in python("print(chr(27)+']52;c;payload'+chr(7))").stdout
         checks += ['child-exit-code', 'terminal-controls-filtered']
         cli('run', '--timeout', '1', '--', '/usr/bin/sleep', '30', code=2)
+        delayed = "import time;from pathlib import Path;time.sleep(2);Path('/workspace/late-child').write_text('unexpected')"
+        parent = 'import subprocess,time;subprocess.Popen(["/usr/bin/python3","-I","-S","-c",'+repr(delayed)+']);time.sleep(30)'
+        cli('run', '--timeout', '1', '--', '/usr/bin/python3', '-I', '-S', '-c', parent, code=2)
+        time.sleep(3)
+        assert not (state/'workspace/late-child').exists(), 'A descendant survived the timeout'
         python("from pathlib import Path;assert Path('hello.txt').read_text()=='你好'")
-        checks.append('timeout-stops-task-and-preserves-data')
+        checks.append('timeout-stops-task-and-descendants-and-preserves-data')
         config = state/'config.json'
         saved = config.read_bytes()
         for bad in [b'{"schema":1,"network":"host"}', b'{"schema":1,"network":"none","mount":"/"}', b'{"schema":1,"schema":1,"network":"none"}']:
@@ -94,7 +99,11 @@ print('isolation-ready')
         assert outside.read_text() == 'not-in-workspace'
         cli('doctor')
         checks.append('outside-canary-and-recovery')
+        os_release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text().splitlines() if '=' in line)
+        distribution = {key: os_release.get(key, '').strip('"') for key in ('ID', 'VERSION_ID')}
+        dependency = subprocess.run(['/usr/bin/bwrap', '--version'], capture_output=True, check=True).stdout.decode().strip()
         result = {'passed': True, 'version': '0.1.0', 'platform': sys.platform, 'checks': checks,
+                  'distribution': distribution, 'python': sys.version.split()[0], 'bubblewrap': dependency,
                   'execution': 'independent temporary Linux state; real bubblewrap/seccomp',
                   'desktop_or_customer_machine_test': False}
         print(json.dumps(result, indent=2))
