@@ -263,7 +263,9 @@ def run(path, args, timeout):
                     '--setenv', 'PATH', '/usr/bin:/bin', '--setenv', 'LANG', 'C.UTF-8',
                     '--setenv', 'LC_ALL', 'C.UTF-8', '--setenv', 'TZ', 'UTC0',
                     '--setenv', 'TMPDIR', '/tmp', '--chdir', '/workspace',
-                    '--seccomp', str(seccomp), '--', *args]
+                    '--seccomp', str(seccomp), '--', '/usr/bin/python3', '-I', '-S', '-B',
+                    '-c', 'import os,sys;os.closerange(3,2147483647);os.execvpe(sys.argv[1],sys.argv[1:],os.environ)',
+                    *args]
         return stream(command, (home, work, seccomp, passwd, group), timeout)
 
 

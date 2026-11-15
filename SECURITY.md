@@ -24,10 +24,12 @@
 
 ```bash
 sudo apt install apparmor-profiles
-test -f /usr/share/apparmor/extra-profiles/bwrap-userns-restrict
-test ! -e /etc/apparmor.d/bwrap-userns-restrict
-sudo install -m 0644 /usr/share/apparmor/extra-profiles/bwrap-userns-restrict /etc/apparmor.d/bwrap-userns-restrict
-sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+if test -f /usr/share/apparmor/extra-profiles/bwrap-userns-restrict && test ! -e /etc/apparmor.d/bwrap-userns-restrict; then
+  sudo install -m 0644 /usr/share/apparmor/extra-profiles/bwrap-userns-restrict /etc/apparmor.d/bwrap-userns-restrict &&
+    sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+else
+  printf '%s\n' '准备条件不符，请让管理员核对现有规则。' >&2
+fi
 ```
 
 任一步失败就停止；此规则限定系统`/usr/bin/bwrap`，影响其他使用同一bubblewrap的工具，属于管理员的系统设置选择。保持全局AppArmor和`kernel.apparmor_restrict_unprivileged_userns`原值，程序本身不会修改这些设置。完成后回到普通用户运行`doctor`。若管理员不允许这项准备，此系统暂不能运行本基础版。
