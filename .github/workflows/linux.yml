@@ -16,6 +16,18 @@ jobs:
       - name: Install distribution dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends bubblewrap libseccomp2
+          sudo apt-get install -y --no-install-recommends bubblewrap libseccomp2 apparmor-profiles
+      - name: Load the distribution's scoped bubblewrap profile
+        run: |
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || true)" = 1 ]; then
+            source=/usr/share/apparmor/extra-profiles/bwrap-userns-restrict
+            target=/etc/apparmor.d/bwrap-userns-restrict
+            test -f "$source"
+            if [ ! -e "$target" ]; then
+              sudo install -m 0644 "$source" "$target"
+            fi
+            sudo apparmor_parser -r "$target"
+            test "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns)" = 1
+          fi
       - name: Verify on an independent Linux runner
         run: python3 -I -S -B tests/check_linux.py

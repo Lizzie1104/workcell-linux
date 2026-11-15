@@ -4,6 +4,8 @@
 
 首发版本 **0.1.0**，目标 **Ubuntu 24.04 / x86_64**。需要 Python 3.12+、bubblewrap 0.9.0+、libseccomp2 和可用的非特权用户命名空间。其他发行版和 WSL 尚未实测。验证记录见[发行说明](https://github.com/Lizzie1104/workcell-linux/releases)。
 
+Ubuntu24.04默认AppArmor策略可能要求管理员先启用发行版的bubblewrap专用规则；遇到`RTM_NEWADDR`或用户命名空间拒绝，按[系统准备说明](SECURITY.md#ubuntu2404的用户命名空间支持)处理。
+
 ## 开始使用
 
 先通过 Ubuntu 官方软件源准备依赖；只有这一步使用 sudo 和系统网络：
